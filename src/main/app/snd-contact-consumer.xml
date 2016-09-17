@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd">
+
+	<context:property-placeholder location="config.properties"/>
+    <jms:activemq-connector name="Active_MQ" brokerURL="${brokerURL}" validateConnections="true" doc:name="Active MQ"/>
+    <sfdc:config name="Salesforce__Basic_Authentication" username="${userSalesForce}" password="${passSalesForce}" securityToken="${tokenSalesForce}" doc:name="Salesforce: Basic Authentication"/>
+    <flow name="snd-contact-consumerFlow">
+        <jms:inbound-endpoint queue="${queu}" connector-ref="Active_MQ" doc:name="JMS"/>
+        <jms:jmsmessage-to-object-transformer doc:name="JMSMessage to Object"/>
+        <logger message="Consumer: #[payload]" level="INFO" doc:name="Logger"/>
+        <sfdc:create config-ref="Salesforce__Basic_Authentication" type="Contact" doc:name="Salesforce">
+            <sfdc:objects>
+                <sfdc:object>
+                    <sfdc:inner-object key="Email">#[payload.email]</sfdc:inner-object>
+                    <sfdc:inner-object key="LastName">#[payload.lastName]</sfdc:inner-object>
+                    <sfdc:inner-object key="Phone">#[payload.phone]</sfdc:inner-object>
+                    <sfdc:inner-object key="FirstName">#[payload.firstName]</sfdc:inner-object>
+                </sfdc:object>
+            </sfdc:objects>
+        </sfdc:create>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>
